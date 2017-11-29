@@ -1,0 +1,9 @@
+/Makefile
+/Makefile.old
+*.o
+*.c
+/*.bs
+/blib
+/pm_to_blib
+/MYMETA.*
+Image-JPEG-Size-*
