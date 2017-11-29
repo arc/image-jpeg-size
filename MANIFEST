@@ -1,0 +1,6 @@
+MANIFEST
+META.json
+META.yml
+Makefile.PL
+Size.xs
+lib/Image/JPEG/Size.pm
