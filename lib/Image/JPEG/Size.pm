@@ -5,16 +5,23 @@ use warnings;
 
 our $VERSION = '0.01';
 
-use Exporter qw(import);
-our @EXPORT_OK = qw(jpeg_file_dimensions jpeg_file_dimensions_hash);
-
 use Carp qw(croak);
 use XSLoader;
 
 XSLoader::load(__PACKAGE__, $VERSION);
 
-sub jpeg_file_dimensions_hash {
-    my ($w, $h) = jpeg_file_dimensions(@_);
+sub new {
+    my $class = shift;
+    my %args = @_ == 1 && ref($_[0]) eq 'HASH' ? %{ $_[0] }
+             : @_ % 2 == 0 ? @_
+             :    croak("$class\->new takes a hash list or hash ref");
+    return $class->_new(\%args);
+}
+
+sub DESTROY { $_[0]->_destroy }
+
+sub file_dimensions_hash {
+    my ($w, $h) = shift->file_dimensions(@_);
     return width => $w, height => $h;
 }
 
@@ -31,9 +38,10 @@ Image::JPEG::Size - find the size of JPEG images
 
 =head1 SYNOPSIS
 
-    use Image::JPEG::Size qw(jpeg_file_dimensions);
+    use Image::JPEG::Size;
 
-    my ($width, $height) = jpeg_file_dimensions($filename);
+    my $jpeg_sizer = Image::JPEG::Size->new;
+    my ($width, $height) = $jpeg_sizer->file_dimensions($filename);
 
 =head1 AUTHOR
 

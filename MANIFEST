@@ -6,3 +6,4 @@ Size.xs
 lib/Image/JPEG/Size.pm
 t/basic.t
 t/data/cc0_320_213.jpg
+typemap
