@@ -14,6 +14,10 @@ my $file = "t/data/cc0_320_213.jpg";
 is_deeply([$jpeg_sizer->file_dimensions($file)], [320, 213],
           'correct dimensions for sample image');
 
+is_deeply({ $jpeg_sizer->file_dimensions_hash($file) },
+          { width => 320, height => 213 },
+          'correct hash dimensions for sample image');
+
 like($_, qr/^Image::JPEG::Size->new takes a hash list or hash ref\b/,
      'exception on ctor args')
     for exception { Image::JPEG::Size->new([]) };
