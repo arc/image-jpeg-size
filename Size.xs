@@ -16,8 +16,17 @@ struct my_error_mgr {
     struct jpeg_error_mgr base; /* must be first in struct */
     enum error_action on_error, on_warning;
     jmp_buf jmp_buffer;
-    char last_error[JMSG_LENGTH_MAX];
+    int error_pos;
+    char error_buffers[2][JMSG_LENGTH_MAX];
 };
+
+#define LAST_ERROR( mgr) ((mgr)->error_buffers[     (mgr)->error_pos ])
+#define OTHER_ERROR(mgr) ((mgr)->error_buffers[ 1 - (mgr)->error_pos ])
+#define CLEAR_ERRORS(mgr) do { \
+    (mgr)->error_pos = 0; \
+    (mgr)->error_buffers[0][0] = '\0'; \
+    (mgr)->error_buffers[1][0] = '\0'; \
+} while (0)
 
 typedef struct sizer *Image__JPEG__Size;
 struct sizer {
@@ -66,7 +75,8 @@ static void
 my_output_message(j_common_ptr cinfo)
 {
     struct my_error_mgr *mgr = get_error_mgr(cinfo);
-    cinfo->err->format_message(cinfo, mgr->last_error);
+    mgr->error_pos = 1 - mgr->error_pos;
+    cinfo->err->format_message(cinfo, LAST_ERROR(mgr));
 }
 
 static void
@@ -76,7 +86,9 @@ my_emit_message(j_common_ptr cinfo, int msg_level)
         struct my_error_mgr *mgr = get_error_mgr(cinfo);
         if (mgr->on_warning == WARN) {
             cinfo->err->output_message(cinfo);
-            warn("%s", mgr->last_error);
+            if (strNE( LAST_ERROR(mgr), OTHER_ERROR(mgr) )) {
+                warn("%s", LAST_ERROR(mgr));
+            }
         }
         else if (mgr->on_warning == FATAL) {
             cinfo->err->output_message(cinfo);
@@ -133,7 +145,7 @@ _new(package, options)
         Newxc(self, 1, struct sizer, struct sizer);
 
         self->error_mgr = error_mgr;
-        self->error_mgr.last_error[0] = '\0';
+        CLEAR_ERRORS(&self->error_mgr);
 
         self->cinfo.err = jpeg_std_error(&self->error_mgr.base);
 
@@ -144,7 +156,7 @@ _new(package, options)
         /* Recovery point for errors in creating the decompressor */
         if (setjmp(self->error_mgr.jmp_buffer)) {
             char error[JMSG_LENGTH_MAX];
-            my_strlcpy(error, self->error_mgr.last_error, sizeof error);
+            my_strlcpy(error, LAST_ERROR(&self->error_mgr), sizeof error);
             jpeg_destroy_decompress(&self->cinfo);
             Safefree(self);
             croak("%s", error);
@@ -177,15 +189,16 @@ file_dimensions(self, filename)
             croak("Can't open %s: %s", filename, strerror(errno));
         }
 
-        self->error_mgr.last_error[0] = '\0';
+        CLEAR_ERRORS(&self->error_mgr);
+
         if ((longjmp_reason = setjmp(self->error_mgr.jmp_buffer))) {
             fclose(f);
             if (longjmp_reason == WARN || self->error_mgr.on_error == FATAL) {
                 jpeg_abort_decompress(&self->cinfo);
-                croak("%s", self->error_mgr.last_error);
+                croak("%s", LAST_ERROR(&self->error_mgr));
             }
             else if (self->error_mgr.on_error == WARN) {
-                warn("%s", self->error_mgr.last_error);
+                warn("%s", LAST_ERROR(&self->error_mgr));
             }
         }
         else {

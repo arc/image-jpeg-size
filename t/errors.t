@@ -9,6 +9,7 @@ use Image::JPEG::Size;
 
 my $invalid = 't/data/invalid.jpg';
 my $recoverable = 't/data/recoverable.jpg';
+my $dupe_errors = 't/data/duplicate-errors.jpg';
 
 my $invalid_error = 'Invalid JPEG file structure: missing SOS marker';
 my $invalid_warning =
@@ -17,6 +18,12 @@ my $invalid_warning =
 my @recoverable_warnings = (
     'Corrupt JPEG data: 40 extraneous bytes before marker 0xfe',
     'Corrupt JPEG data: 52 extraneous bytes before marker 0xc4',
+);
+
+my @deduped_warnings = (
+    'Premature end of JPEG file',
+    'Corrupt JPEG data: 1 extraneous bytes before marker 0xd9',
+    'Invalid JPEG file structure: missing SOS marker',
 );
 
 sub clean {
@@ -106,5 +113,9 @@ is_deeply([catch(qw(fatal warn), $recoverable)],
 is_deeply([catch(qw(fatal fatal), $recoverable)],
           [$recoverable_warnings[0], []],
           'error handling for fatal/fatal/recoverable');
+
+is_deeply([catch(qw(warn warn), $dupe_errors)],
+          [undef, \@deduped_warnings, 0, 0],
+          'error handling for duplicate errors');
 
 done_testing();
