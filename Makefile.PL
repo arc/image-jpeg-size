@@ -42,11 +42,9 @@ my %make = (
     INC  =>  join(' ', (map "-I$_", @incs)),
     LIBS => [join ' ', (map "-L$_", @libs), "-ljpeg"],
     META_MERGE => {
-        'meta-spec' => { version => 2 },
         resources => {
-            type => 'git',
-            url => 'git://github.com/arc/iamge-jpeg-size.git',
-            web => 'https://github.com/arc/iamge-jpeg-size',
+            repository => 'git://github.com/arc/image-jpeg-size.git',
+            bugtracker => 'https://github.com/arc/image-jpeg-size/issues',
         },
     },
 );
