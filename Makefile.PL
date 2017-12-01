@@ -37,6 +37,7 @@ my %make = (
     },
     TEST_REQUIRES => {
         'Test::More' => 0,
+        'Test::Fatal' => 0,
     },
     INC  =>  join(' ', (map "-I$_", @incs)),
     LIBS => [join ' ', (map "-L$_", @libs), "-ljpeg"],
